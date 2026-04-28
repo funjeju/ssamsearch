@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   signInWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/client';
@@ -18,12 +19,52 @@ import { toast } from 'sonner';
 
 const googleProvider = new GoogleAuthProvider();
 
+async function handleRedirectResult(
+  router: ReturnType<typeof useRouter>,
+  setLoading: (v: boolean) => void,
+) {
+  setLoading(true);
+  try {
+    const result = await getRedirectResult(auth);
+    if (!result) return;
+    const user = result.user;
+    const idToken = await user.getIdToken();
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    if (!userDoc.exists()) {
+      await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          displayName: user.displayName ?? '선생님',
+          phoneNumber: '',
+          schoolType: 'elementary',
+        }),
+      });
+      router.push('/accounts?welcome=true');
+    } else {
+      router.push('/search');
+    }
+  } catch (err: unknown) {
+    const code = (err as { code?: string }).code;
+    if (code) toast.error('구글 로그인 중 오류가 발생했습니다.');
+  } finally {
+    setLoading(false);
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    handleRedirectResult(router, setGoogleLoading);
+  }, [router]);
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -33,7 +74,11 @@ export default function LoginPage() {
       router.push('/search');
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
-      if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+      if (
+        code === 'auth/user-not-found' ||
+        code === 'auth/wrong-password' ||
+        code === 'auth/invalid-credential'
+      ) {
         toast.error('이메일 또는 비밀번호가 올바르지 않습니다.');
       } else {
         toast.error('로그인 중 오류가 발생했습니다.');
@@ -45,39 +90,7 @@ export default function LoginPage() {
 
   async function handleGoogleLogin() {
     setGoogleLoading(true);
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-      const idToken = await user.getIdToken();
-
-      // 신규 유저면 프로필 생성
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (!userDoc.exists()) {
-        await fetch('/api/auth/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({
-            displayName: user.displayName ?? '선생님',
-            phoneNumber: '',
-            schoolType: 'elementary',
-          }),
-        });
-        // 첫 로그인 → 계정 연결 유도
-        router.push('/accounts?welcome=true');
-      } else {
-        router.push('/search');
-      }
-    } catch (err: unknown) {
-      const code = (err as { code?: string }).code;
-      if (code !== 'auth/popup-closed-by-user') {
-        toast.error('구글 로그인 중 오류가 발생했습니다.');
-      }
-    } finally {
-      setGoogleLoading(false);
-    }
+    await signInWithRedirect(auth, googleProvider);
   }
 
   return (
@@ -93,7 +106,6 @@ export default function LoginPage() {
             <CardTitle>로그인</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* 구글 로그인 */}
             <Button
               variant="outline"
               className="w-full flex items-center gap-3 h-11"
@@ -118,7 +130,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* 이메일 로그인 */}
             <form onSubmit={handleEmailLogin} className="space-y-3">
               <div className="space-y-1">
                 <Label htmlFor="email">이메일</Label>
