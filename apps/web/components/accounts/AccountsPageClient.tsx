@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { AccountList } from './AccountList';
 import { AddAccountDialog } from './AddAccountDialog';
@@ -17,7 +17,14 @@ const SITES = [
 
 export function AccountsPageClient() {
   const { user, loading } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/login?redirect=/accounts');
+    }
+  }, [user, loading, router]);
   const isWelcome = searchParams.get('welcome') === 'true';
 
   const [accounts, setAccounts] = useState<ExternalAccountPublic[]>([]);

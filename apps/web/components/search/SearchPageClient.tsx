@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { SearchHero } from './SearchHero';
 import { SearchResults } from './SearchResults';
@@ -9,7 +10,14 @@ import type { SearchResultItem, SiteId, SiteSearchStatus, SearchFilters } from '
 import { SITE_IDS } from '@ssamsearch/shared';
 
 export function SearchPageClient() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/login?redirect=/search');
+    }
+  }, [user, loading, router]);
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [siteStatus, setSiteStatus] = useState<Partial<Record<SiteId, SiteSearchStatus>>>({});
   const [isSearching, setIsSearching] = useState(false);

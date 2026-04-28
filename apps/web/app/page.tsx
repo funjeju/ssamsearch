@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
@@ -12,6 +12,12 @@ export default function HomePage() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [query, setQuery] = useState('');
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/search');
+    }
+  }, [user, loading, router]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
