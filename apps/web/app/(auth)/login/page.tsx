@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   signInWithEmailAndPassword,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   GoogleAuthProvider,
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/client';
@@ -32,33 +31,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(true);
-
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (!result) return;
-        const user = result.user;
-        const idToken = await user.getIdToken();
-        await createSession(idToken);
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (!userDoc.exists()) {
-          await fetch('/api/auth/signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-            body: JSON.stringify({ displayName: user.displayName ?? '선생님', phoneNumber: '', schoolType: 'elementary' }),
-          });
-          router.push('/accounts?welcome=true');
-        } else {
-          router.push('/search');
-        }
-      })
-      .catch((err: unknown) => {
-        const code = (err as { code?: string }).code;
-        if (code) toast.error('구글 로그인 중 오류가 발생했습니다.');
-      })
-      .finally(() => setGoogleLoading(false));
-  }, [router]);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -82,7 +55,30 @@ export default function LoginPage() {
 
   async function handleGoogleLogin() {
     setGoogleLoading(true);
-    await signInWithRedirect(auth, googleProvider);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const idToken = await user.getIdToken();
+      await createSession(idToken);
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (!userDoc.exists()) {
+        await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+          body: JSON.stringify({ displayName: user.displayName ?? '선생님', phoneNumber: '', schoolType: 'elementary' }),
+        });
+        router.push('/accounts?welcome=true');
+      } else {
+        router.push('/search');
+      }
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
+      if (code !== 'auth/popup-closed-by-user') {
+        toast.error('구글 로그인 중 오류가 발생했습니다.');
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
   }
 
   return (
