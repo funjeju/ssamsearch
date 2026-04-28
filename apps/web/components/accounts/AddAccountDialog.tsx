@@ -27,13 +27,15 @@ type Step = 'form' | 'testing' | 'done';
 
 interface Props {
   onSuccess: () => void;
+  defaultSite?: string;
+  trigger?: React.ReactNode;
 }
 
-export function AddAccountDialog({ onSuccess }: Props) {
+export function AddAccountDialog({ onSuccess, defaultSite, trigger }: Props) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>('form');
-  const [site, setSite] = useState<SiteId>('indischool');
+  const [site, setSite] = useState<SiteId>((defaultSite as SiteId) ?? 'indischool');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -41,7 +43,7 @@ export function AddAccountDialog({ onSuccess }: Props) {
 
   function reset() {
     setStep('form');
-    setSite('indischool');
+    setSite((defaultSite as SiteId) ?? 'indischool');
     setUsername('');
     setPassword('');
     setDisplayName('');
@@ -83,15 +85,9 @@ export function AddAccountDialog({ onSuccess }: Props) {
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        setOpen(v);
-        if (!v) reset();
-      }}
-    >
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
       <DialogTrigger asChild>
-        <Button>+ 계정 추가</Button>
+        {trigger ?? <Button>+ 계정 추가</Button>}
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -145,15 +141,14 @@ export function AddAccountDialog({ onSuccess }: Props) {
               <Label htmlFor="displayName">별칭 (선택)</Label>
               <Input
                 id="displayName"
-                placeholder="예) 내 인디스쿨"
+                placeholder={`내 ${SITE_DISPLAY_NAMES[site]}`}
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
               />
             </div>
 
             <p className="text-xs text-muted-foreground bg-muted rounded p-3">
-              비밀번호는 AES-256 암호화 + KMS 키 분리로 안전하게 저장됩니다. 저장 즉시 로그인 테스트를
-              진행합니다.
+              비밀번호는 AES-256 암호화로 안전하게 저장됩니다. 저장 즉시 로그인을 테스트합니다.
             </p>
 
             <Button type="submit" className="w-full" disabled={loading}>

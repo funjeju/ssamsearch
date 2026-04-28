@@ -6,8 +6,8 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 const SignupSchema = z.object({
   displayName: z.string().min(1).max(50),
-  phoneNumber: z.string().regex(/^(\+82)?0?1[0-9]{8,9}$/),
-  schoolType: z.enum(['elementary', 'middle', 'high', 'special']),
+  phoneNumber: z.string().optional().default(''),
+  schoolType: z.enum(['elementary', 'middle', 'high', 'special']).default('elementary'),
   grade: z.number().int().min(1).max(6).optional(),
   subject: z.string().optional(),
 });
@@ -23,9 +23,9 @@ export async function POST(req: Request) {
 
     const { displayName, phoneNumber, schoolType, grade, subject } = parsed.data;
 
-    // 정규화된 전화번호
-    const normalized = phoneNumber.replace(/^(\+82)?0?/, '+8210').replace(/\D/g, '');
-    const e164 = normalized.startsWith('+') ? normalized : `+${normalized}`;
+    const e164 = phoneNumber
+      ? phoneNumber.replace(/^(\+82)?0?/, '+8210').replace(/\D/g, '')
+      : '';
 
     await adminDb
       .collection('users')

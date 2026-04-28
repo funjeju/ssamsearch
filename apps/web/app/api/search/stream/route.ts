@@ -2,7 +2,6 @@ import { adminAuth } from '@/lib/firebase/admin';
 import { getRedis } from '@/lib/redis';
 import { apiError } from '@/lib/utils';
 
-export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
