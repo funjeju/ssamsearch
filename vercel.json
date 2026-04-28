@@ -1,12 +1,1 @@
-{
-  "framework": "nextjs",
-  "buildCommand": "cd ../.. && pnpm --filter web build",
-  "outputDirectory": ".next",
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-  "regions": ["icn1"],
-  "functions": {
-    "app/api/**/*.ts": {
-      "maxDuration": 60
-    }
-  }
-}
+{}
