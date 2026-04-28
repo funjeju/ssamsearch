@@ -72,7 +72,7 @@ export default function HomePage() {
         )}
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center px-4 -mt-16">
+      <main className="flex-1 flex flex-col items-center justify-center px-4">
 
         <div className="text-center mb-8">
           <h1 className="text-5xl font-bold text-primary tracking-tight mb-3">쌤서치</h1>
