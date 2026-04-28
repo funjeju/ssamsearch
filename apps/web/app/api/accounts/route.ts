@@ -56,33 +56,33 @@ export async function POST(req: Request) {
 
     const { site, username, password, displayName } = parsed.data;
 
-    // 워커에 로그인 테스트 요청
-    const workerUrl = process.env.WORKER_URL ?? 'http://localhost:8080';
-    const testRes = await fetch(`${workerUrl}/internal/login-test`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Internal-Token': process.env.WORKER_INTERNAL_TOKEN ?? '',
-      },
-      body: JSON.stringify({ site, username, password }),
-      signal: AbortSignal.timeout(15_000),
-    });
+    // 워커에 로그인 테스트 요청 (워커가 배포된 경우에만)
+    const workerUrl = process.env.WORKER_URL ?? '';
+    const workerReady = workerUrl && !workerUrl.includes('localhost');
+    let loginTested = false;
 
-    if (!testRes.ok) {
-      return apiError(
-        'EXTERNAL_LOGIN_FAILED',
-        '외부 사이트 로그인에 실패했습니다. 아이디/비밀번호를 확인해주세요.',
-        422
-      );
-    }
+    if (workerReady) {
+      try {
+        const testRes = await fetch(`${workerUrl}/internal/login-test`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Internal-Token': process.env.WORKER_INTERNAL_TOKEN ?? '',
+          },
+          body: JSON.stringify({ site, username, password }),
+          signal: AbortSignal.timeout(15_000),
+        });
 
-    const testData = await testRes.json();
-    if (!testData.loginSuccess) {
-      return apiError(
-        'EXTERNAL_LOGIN_FAILED',
-        '외부 사이트 로그인에 실패했습니다. 아이디/비밀번호를 확인해주세요.',
-        422
-      );
+        if (testRes.ok) {
+          const testData = await testRes.json();
+          if (!testData.loginSuccess) {
+            return apiError('EXTERNAL_LOGIN_FAILED', '외부 사이트 로그인에 실패했습니다. 아이디/비밀번호를 확인해주세요.', 422);
+          }
+          loginTested = true;
+        }
+      } catch {
+        // 워커 일시 불가 → 로그인 테스트 스킵하고 저장만
+      }
     }
 
     // 자격증명 암호화 (envelope encryption)
@@ -109,7 +109,7 @@ export async function POST(req: Request) {
 
     await auditLog(uid, 'account_add', 'success', req, { site });
 
-    return apiSuccess({ accountId: accountRef.id, site, loginTested: true });
+    return apiSuccess({ accountId: accountRef.id, site, loginTested });
   } catch (err: unknown) {
     const message = (err as Error).message;
     if (message === 'UNAUTHORIZED') return apiError('UNAUTHORIZED', '인증이 필요합니다.', 401);
