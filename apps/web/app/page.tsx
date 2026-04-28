@@ -13,7 +13,7 @@ import { SITE_IDS } from '@ssamsearch/shared';
 import { useRouter } from 'next/navigation';
 
 const SITES = ['인디스쿨', '아이스크림', '티쳐빌', 'T셀파', '에듀넷'];
-const SEARCH_TIMEOUT_MS = 30_000;
+const SEARCH_TIMEOUT_MS = 120_000;
 
 export default function HomePage() {
   const router = useRouter();
@@ -192,7 +192,7 @@ export default function HomePage() {
                 disabled={isSearching || !query.trim()}
                 className="absolute right-2 px-5 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                {isSearching ? '검색 중...' : '검색'}
+                {isSearching ? '검색 중' : '검색'}
               </button>
             </div>
           </form>

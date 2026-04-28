@@ -21,7 +21,7 @@ export async function enqueueSearchJob(data: SearchJobData): Promise<string> {
       'X-Internal-Token': process.env.WORKER_INTERNAL_TOKEN ?? '',
     },
     body: JSON.stringify(data),
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(60_000),
   });
 
   if (!res.ok) {
