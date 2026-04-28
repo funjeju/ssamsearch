@@ -8,22 +8,11 @@ primary_region = "nrt"
   NODE_ENV = "production"
   PORT = "8080"
 
-[[services]]
+[http_service]
   internal_port = 8080
-  protocol = "tcp"
-
-  [[services.ports]]
-    port = 80
-    handlers = ["http"]
-
-  [[services.ports]]
-    port = 443
-    handlers = ["tls", "http"]
-
-  [services.concurrency]
-    type = "connections"
-    hard_limit = 25
-    soft_limit = 20
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
 
 [[vm]]
   cpu_kind = "shared"
@@ -38,3 +27,4 @@ primary_region = "nrt"
     grace_period = "30s"
     method = "GET"
     path = "/health"
+    port = 8080

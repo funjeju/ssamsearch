@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:playwright --external:chromium",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit"
   },
@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
+    "esbuild": "^0.23.0",
     "tsx": "^4.16.0",
     "typescript": "^5.5.0"
   }

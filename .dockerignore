@@ -3,6 +3,7 @@
 **/dist
 **/.turbo
 **/*.log
+**/*.tsbuildinfo
 .git
 .gitignore
 *.md
