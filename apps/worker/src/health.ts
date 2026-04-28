@@ -105,6 +105,7 @@ async function handleSearchJob(req: IncomingMessage, res: ServerResponse) {
     return sendJson(res, 400, { error: 'searchId, uid, query, sites required' });
   }
 
+  logger.info({ searchId }, '/internal/search 요청 수신');
   sendJson(res, 202, { received: true, searchId });
 
   processSearchJob({ searchId, uid, query, filters: filters ?? {}, sites }).catch((err) => {

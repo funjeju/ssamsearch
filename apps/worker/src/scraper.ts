@@ -41,6 +41,8 @@ export interface SearchJobData {
 export async function processSearchJob(data: SearchJobData) {
   const { searchId, uid, query, filters, sites } = data;
 
+  logger.info({ searchId, query, sites }, '검색 잡 시작');
+
   // 잡 상태를 running으로 업데이트
   await adminDb.collection('searches').doc(searchId).update({
     status: 'running',
