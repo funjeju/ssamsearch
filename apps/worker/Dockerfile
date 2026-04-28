@@ -32,6 +32,9 @@ RUN pnpm install --frozen-lockfile
 COPY packages ./packages
 COPY apps/worker ./apps/worker
 
+RUN pnpm --filter @ssamsearch/shared build
+RUN pnpm --filter @ssamsearch/crypto build
+RUN pnpm --filter @ssamsearch/adapters build
 RUN pnpm --filter worker build
 
 EXPOSE 8080
