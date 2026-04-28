@@ -1,9 +1,6 @@
-import { SearchPageClient } from '@/components/search/SearchPageClient';
+import { redirect } from 'next/navigation';
 
-export const metadata = {
-  title: '검색 | 쌤서치',
-};
-
-export default function SearchPage() {
-  return <SearchPageClient />;
+export default function SearchPage({ searchParams }: { searchParams: { q?: string } }) {
+  const q = searchParams.q;
+  redirect(q ? `/?q=${encodeURIComponent(q)}` : '/');
 }
