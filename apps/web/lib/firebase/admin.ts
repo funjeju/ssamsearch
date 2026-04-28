@@ -1,29 +1,43 @@
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
+import { getAuth, type Auth } from 'firebase-admin/auth';
+import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 
-function initAdmin() {
-  if (getApps().length > 0) return;
+let app: App | null = null;
 
-  const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID!;
+function getAdminApp(): App {
+  if (app) return app;
+
+  if (getApps().length > 0) {
+    app = getApps()[0]!;
+    return app;
+  }
+
+  const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
+  if (!projectId) throw new Error('FIREBASE_ADMIN_PROJECT_ID is not set');
+
   const useEmulator = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true';
 
   if (useEmulator) {
-    // 에뮬레이터 모드: 서비스 계정 키 불필요
-    initializeApp({ projectId });
+    app = initializeApp({ projectId });
   } else {
+    const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
     const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n');
-    initializeApp({
-      credential: cert({
-        projectId,
-        clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL!,
-        privateKey: privateKey!,
-      }),
-    });
+    if (!clientEmail || !privateKey) throw new Error('Firebase Admin credentials are not set');
+
+    app = initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
   }
+
+  return app;
 }
 
-initAdmin();
+export const adminAuth: Auth = new Proxy({} as Auth, {
+  get(_, prop) {
+    return getAuth(getAdminApp())[prop as keyof Auth];
+  },
+});
 
-export const adminAuth = getAuth();
-export const adminDb = getFirestore();
+export const adminDb: Firestore = new Proxy({} as Firestore, {
+  get(_, prop) {
+    return getFirestore(getAdminApp())[prop as keyof Firestore];
+  },
+});

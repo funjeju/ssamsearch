@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { AccountsPageClient } from '@/components/accounts/AccountsPageClient';
 
 export const metadata = {
@@ -5,5 +6,9 @@ export const metadata = {
 };
 
 export default function AccountsPage() {
-  return <AccountsPageClient />;
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-muted-foreground">불러오는 중...</div>}>
+      <AccountsPageClient />
+    </Suspense>
+  );
 }
