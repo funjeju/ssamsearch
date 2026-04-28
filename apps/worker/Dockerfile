@@ -21,7 +21,7 @@ WORKDIR /app
 
 RUN corepack enable
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps/worker/package.json ./apps/worker/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/crypto/package.json ./packages/crypto/
@@ -32,9 +32,6 @@ RUN pnpm install --frozen-lockfile
 COPY packages ./packages
 COPY apps/worker ./apps/worker
 
-RUN pnpm --filter @ssamsearch/shared build
-RUN pnpm --filter @ssamsearch/crypto build
-RUN pnpm --filter @ssamsearch/adapters build
 RUN pnpm --filter worker build
 
 EXPOSE 8080
