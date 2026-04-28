@@ -19,40 +19,12 @@ import { toast } from 'sonner';
 
 const googleProvider = new GoogleAuthProvider();
 
-async function handleRedirectResult(
-  router: ReturnType<typeof useRouter>,
-  setLoading: (v: boolean) => void,
-) {
-  setLoading(true);
-  try {
-    const result = await getRedirectResult(auth);
-    if (!result) return;
-    const user = result.user;
-    const idToken = await user.getIdToken();
-    const userDoc = await getDoc(doc(db, 'users', user.uid));
-    if (!userDoc.exists()) {
-      await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          displayName: user.displayName ?? '선생님',
-          phoneNumber: '',
-          schoolType: 'elementary',
-        }),
-      });
-      router.push('/accounts?welcome=true');
-    } else {
-      router.push('/search');
-    }
-  } catch (err: unknown) {
-    const code = (err as { code?: string }).code;
-    if (code) toast.error('구글 로그인 중 오류가 발생했습니다.');
-  } finally {
-    setLoading(false);
-  }
+async function createSession(idToken: string) {
+  await fetch('/api/auth/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken }),
+  });
 }
 
 export default function LoginPage() {
@@ -60,25 +32,45 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(true);
 
   useEffect(() => {
-    handleRedirectResult(router, setGoogleLoading);
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (!result) return;
+        const user = result.user;
+        const idToken = await user.getIdToken();
+        await createSession(idToken);
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (!userDoc.exists()) {
+          await fetch('/api/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify({ displayName: user.displayName ?? '선생님', phoneNumber: '', schoolType: 'elementary' }),
+          });
+          router.push('/accounts?welcome=true');
+        } else {
+          router.push('/search');
+        }
+      })
+      .catch((err: unknown) => {
+        const code = (err as { code?: string }).code;
+        if (code) toast.error('구글 로그인 중 오류가 발생했습니다.');
+      })
+      .finally(() => setGoogleLoading(false));
   }, [router]);
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await credential.user.getIdToken();
+      await createSession(idToken);
       router.push('/search');
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
-      if (
-        code === 'auth/user-not-found' ||
-        code === 'auth/wrong-password' ||
-        code === 'auth/invalid-credential'
-      ) {
+      if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
         toast.error('이메일 또는 비밀번호가 올바르지 않습니다.');
       } else {
         toast.error('로그인 중 오류가 발생했습니다.');
@@ -154,7 +146,7 @@ export default function LoginPage() {
                   autoComplete="current-password"
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || googleLoading}>
                 {loading ? '로그인 중...' : '이메일로 로그인'}
               </Button>
             </form>

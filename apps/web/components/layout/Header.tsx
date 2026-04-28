@@ -20,6 +20,7 @@ export function Header() {
   async function handleSignOut() {
     try {
       await signOut(auth);
+      await fetch('/api/auth/session', { method: 'DELETE' });
       router.replace('/login');
     } catch {
       toast.error('로그아웃 중 오류가 발생했습니다.');
