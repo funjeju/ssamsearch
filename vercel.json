@@ -1,8 +1,8 @@
 {
   "framework": "nextjs",
-  "buildCommand": "pnpm --filter web build",
+  "buildCommand": "cd ../.. && pnpm --filter web build",
   "outputDirectory": ".next",
-  "installCommand": "pnpm install --frozen-lockfile",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "regions": ["icn1"],
   "functions": {
     "app/api/**/*.ts": {
