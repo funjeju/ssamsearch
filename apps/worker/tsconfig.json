@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "dist",
+    "rootDir": "src",
+    "jsx": "react",
+    "paths": {
+      "@ssamsearch/shared": ["../../packages/shared/src"],
+      "@ssamsearch/adapters": ["../../packages/adapters/src"],
+      "@ssamsearch/crypto": ["../../packages/crypto/src"]
+    }
+  },
+  "include": ["src"]
+}
