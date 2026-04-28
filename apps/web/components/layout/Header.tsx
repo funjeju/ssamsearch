@@ -5,23 +5,20 @@ import { usePathname, useRouter } from 'next/navigation';
 import { BookOpen, Search, LogOut } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
-const NAV_ITEMS = [
-  { href: '/search', label: '검색', icon: Search },
-  { href: '/accounts', label: '내 계정', icon: BookOpen },
-];
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useAuth();
 
   async function handleSignOut() {
     try {
       await signOut(auth);
       await fetch('/api/auth/session', { method: 'DELETE' });
-      router.replace('/login');
+      router.replace('/search');
     } catch {
       toast.error('로그아웃 중 오류가 발생했습니다.');
     }
@@ -35,33 +32,54 @@ export function Header() {
         </Link>
 
         <nav className="flex items-center gap-1">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                'hover:bg-accent hover:text-accent-foreground',
-                pathname === href
-                  ? 'bg-accent text-accent-foreground'
-                  : 'text-muted-foreground'
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </Link>
-          ))}
-
-          <button
-            onClick={handleSignOut}
-            className={cn(
-              'ml-2 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-              'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-            )}
-          >
-            <LogOut className="h-4 w-4" />
-            로그아웃
-          </button>
+          {user ? (
+            <>
+              <Link
+                href="/search"
+                className={cn(
+                  'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                  'hover:bg-accent hover:text-accent-foreground',
+                  pathname === '/search' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
+                )}
+              >
+                <Search className="h-4 w-4" />
+                검색
+              </Link>
+              <Link
+                href="/accounts"
+                className={cn(
+                  'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                  'hover:bg-accent hover:text-accent-foreground',
+                  pathname === '/accounts' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
+                )}
+              >
+                <BookOpen className="h-4 w-4" />
+                내 계정
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="ml-2 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              >
+                <LogOut className="h-4 w-4" />
+                로그아웃
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-sm font-medium px-4 py-2 rounded-md hover:bg-accent transition-colors"
+              >
+                로그인
+              </Link>
+              <Link
+                href="/signup"
+                className="text-sm font-medium px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                회원가입
+              </Link>
+            </>
+          )}
         </nav>
       </div>
     </header>

@@ -51,12 +51,12 @@ export async function POST(req: Request) {
       .get();
 
     const connectedSites = accountsSnap.docs.map((d) => d.data()['site'] as SiteId);
-    const targetSites =
-      sites
-        ? sites.filter((s) => connectedSites.includes(s))
-        : connectedSites.length > 0
-        ? connectedSites
-        : SITE_IDS; // 연결된 사이트 없으면 전체 (비로그인 데모용)
+
+    if (connectedSites.length === 0) {
+      return apiError('NO_ACCOUNTS', '연결된 사이트 계정이 없습니다.', 422);
+    }
+
+    const targetSites = sites ? sites.filter((s) => connectedSites.includes(s)) : connectedSites;
 
     // 캐시 확인
     const cacheKey = buildCacheKey(uid, query, filters);

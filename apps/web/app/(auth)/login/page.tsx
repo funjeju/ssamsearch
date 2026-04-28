@@ -40,7 +40,7 @@ export default function LoginPage() {
       const credential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await credential.user.getIdToken();
       await createSession(idToken);
-      router.push('/search');
+      router.push('/');
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
       if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
@@ -69,7 +69,7 @@ export default function LoginPage() {
         });
         router.push('/accounts?welcome=true');
       } else {
-        router.push('/search');
+        router.push('/');
       }
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
