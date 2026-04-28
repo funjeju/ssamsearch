@@ -8,17 +8,22 @@ export class IndischoolAdapter implements SiteAdapter {
 
   async login(page: Page, credentials: Credentials): Promise<void> {
     await page.goto(`${this.baseUrl}/member/login.indischool`, {
-      waitUntil: 'domcontentloaded',
-      timeout: 15_000,
+      waitUntil: 'networkidle',
+      timeout: 30_000,
     });
 
-    // 로그인 폼 입력 - 실제 셀렉터는 사이트 DOM 확인 후 갱신 필요
-    await page.fill('input[name="mb_id"]', credentials.username);
-    await page.fill('input[name="mb_password"]', credentials.password);
-    await page.click('button[type="submit"], input[type="submit"]');
+    // 아이디 필드: name="mb_id" 또는 id 관련 input
+    const idSelector = 'input[name="mb_id"], input[id*="id"], input[type="text"][name*="id"]';
+    const pwSelector = 'input[name="mb_password"], input[type="password"]';
 
-    // 로그인 성공: 메인 또는 마이페이지로 리다이렉트
-    await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 15_000 });
+    await page.waitForSelector(idSelector, { timeout: 15_000 });
+    await page.fill(idSelector, credentials.username);
+    await page.fill(pwSelector, credentials.password);
+
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: 'networkidle', timeout: 20_000 }).catch(() => null),
+      page.click('button[type="submit"], input[type="submit"], .btn_login, .login_btn'),
+    ]);
 
     const loggedIn = await this.isLoggedIn(page);
     if (!loggedIn) {
