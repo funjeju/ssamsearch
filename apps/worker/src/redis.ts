@@ -41,5 +41,7 @@ export async function setCachedSession(uid: string, siteId: string, cookies: unk
 
 export async function publishSseEvent(searchId: string, event: unknown) {
   const redis = getRedis();
-  await redis.publish(`search:${searchId}`, JSON.stringify(event));
+  const key = `sse:${searchId}`;
+  await redis.rpush(key, JSON.stringify(event));
+  await redis.expire(key, 300);
 }

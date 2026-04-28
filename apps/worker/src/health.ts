@@ -1,8 +1,9 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'http';
 import { chromium } from 'playwright';
 import { adapters } from '@ssamsearch/adapters';
-import type { SiteId } from '@ssamsearch/shared';
+import type { SiteId, SearchFilters } from '@ssamsearch/shared';
 import { logger } from './logger';
+import { processSearchJob } from './scraper';
 
 const INTERNAL_TOKEN = process.env['WORKER_INTERNAL_TOKEN'] ?? 'local-dev-token-change-in-production';
 
@@ -86,6 +87,31 @@ async function handleLoginTest(req: IncomingMessage, res: ServerResponse) {
   }
 }
 
+async function handleSearchJob(req: IncomingMessage, res: ServerResponse) {
+  const token = req.headers['x-internal-token'];
+  if (token !== INTERNAL_TOKEN) {
+    return sendJson(res, 401, { error: 'Unauthorized' });
+  }
+
+  let body: { searchId?: string; uid?: string; query?: string; filters?: SearchFilters; sites?: SiteId[] };
+  try {
+    body = (await parseBody(req)) as typeof body;
+  } catch {
+    return sendJson(res, 400, { error: 'Invalid request body' });
+  }
+
+  const { searchId, uid, query, filters, sites } = body;
+  if (!searchId || !uid || !query || !sites) {
+    return sendJson(res, 400, { error: 'searchId, uid, query, sites required' });
+  }
+
+  sendJson(res, 202, { received: true, searchId });
+
+  processSearchJob({ searchId, uid, query, filters: filters ?? {}, sites }).catch((err) => {
+    logger.error({ err, searchId }, '검색 잡 처리 실패');
+  });
+}
+
 export function createHealthServer() {
   const port = parseInt(process.env['PORT'] ?? '8080');
 
@@ -99,6 +125,10 @@ export function createHealthServer() {
 
     if (url === '/internal/login-test' && method === 'POST') {
       return handleLoginTest(req, res);
+    }
+
+    if (url === '/internal/search' && method === 'POST') {
+      return handleSearchJob(req, res);
     }
 
     res.writeHead(404);

@@ -1,5 +1,4 @@
 import { chromium, type Browser } from 'playwright';
-import type { Job } from 'bullmq';
 import type { SiteId, SearchResultItem } from '@ssamsearch/shared';
 import { SITE_IDS } from '@ssamsearch/shared';
 import { adapters } from '@ssamsearch/adapters';
@@ -31,7 +30,7 @@ async function getBrowser(): Promise<Browser> {
   return browser;
 }
 
-interface SearchJobData {
+export interface SearchJobData {
   searchId: string;
   uid: string;
   query: string;
@@ -39,8 +38,8 @@ interface SearchJobData {
   sites: SiteId[];
 }
 
-export async function processSearchJob(job: Job<SearchJobData>) {
-  const { searchId, uid, query, filters, sites } = job.data;
+export async function processSearchJob(data: SearchJobData) {
+  const { searchId, uid, query, filters, sites } = data;
 
   // 잡 상태를 running으로 업데이트
   await adminDb.collection('searches').doc(searchId).update({
